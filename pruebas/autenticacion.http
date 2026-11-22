@@ -1,0 +1,82 @@
+### =====================================================
+### Pruebas manuales del servicio de autenticación
+### Requiere la extensión "REST Client" de VS Code.
+### Haz clic en "Send Request" encima de cada petición.
+### =====================================================
+
+@base = http://localhost:4000/api
+
+### 0. Ver los servicios disponibles
+GET {{base}}
+
+### 1. Registro correcto → 201
+POST {{base}}/registro
+Content-Type: application/json
+
+{
+  "usuario": "sergio.herrera",
+  "contrasena": "BabySarai2026"
+}
+
+### 2. Registro repetido → 409 "El usuario ya está registrado"
+POST {{base}}/registro
+Content-Type: application/json
+
+{
+  "usuario": "Sergio.Herrera",
+  "contrasena": "OtraClave123"
+}
+
+### 3. Registro con datos inválidos → 400 con la lista de errores
+POST {{base}}/registro
+Content-Type: application/json
+
+{
+  "usuario": "yo",
+  "contrasena": "corta"
+}
+
+### 4. Inicio de sesión correcto → 200 "Autenticación satisfactoria" + token
+# @name login
+POST {{base}}/login
+Content-Type: application/json
+
+{
+  "usuario": "sergio.herrera",
+  "contrasena": "BabySarai2026"
+}
+
+### 5. Contraseña incorrecta → 401 "Error en la autenticación"
+POST {{base}}/login
+Content-Type: application/json
+
+{
+  "usuario": "sergio.herrera",
+  "contrasena": "ClaveEquivocada1"
+}
+
+### 6. Usuario que no existe → 401 con el MISMO mensaje
+POST {{base}}/login
+Content-Type: application/json
+
+{
+  "usuario": "no.existe",
+  "contrasena": "BabySarai2026"
+}
+
+### 7. Sin datos → 400
+POST {{base}}/login
+Content-Type: application/json
+
+{}
+
+### 8. Ruta protegida con el token del paso 4 → 200
+GET {{base}}/perfil
+Authorization: Bearer {{login.response.body.token}}
+
+### 9. Ruta protegida sin token → 401
+GET {{base}}/perfil
+
+### 10. Ruta protegida con un token falso → 401 "Token inválido"
+GET {{base}}/perfil
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.firma-falsa
